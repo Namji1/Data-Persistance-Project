@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -14,11 +15,16 @@ public class MainManager : MonoBehaviour
     public GameObject GameOverText;
     
     private bool m_Started = false;
-    private int m_Points;
+    public int m_Points;
     
     private bool m_GameOver = false;
 
-    
+    public string playerName;
+    public DataManager dataManagerScript;
+    public Text nameText;
+    public int bestScore;
+    public string bestPlayerName;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -36,6 +42,9 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+        dataManagerScript = GameObject.FindGameObjectWithTag("dataManager").GetComponent<DataManager>();
+        LoadName();
+        SetPlayerName();
     }
 
     private void Update()
@@ -72,5 +81,42 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        SavingName();
+    }
+    public void SetPlayerName()
+    {
+        playerName = dataManagerScript.playerName;
+        nameText.text = "Best Score: " + bestScore + " Name: " + bestPlayerName;
+    }
+
+    public void SavingName()
+    {
+        SaveData saveName = new SaveData();
+        if (m_Points > bestScore)
+        {
+            saveName.bestPlayerName = playerName;
+            saveName.bestScore = m_Points;
+            string json = JsonUtility.ToJson((saveName));
+            File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+        }
+    }
+
+    public void LoadName()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData loadName = JsonUtility.FromJson<SaveData>(json);
+            bestPlayerName = loadName.bestPlayerName;
+            bestScore = loadName.bestScore;
+        }
+    }
+
+    [System.Serializable]
+    class SaveData
+    {
+        public string bestPlayerName;
+        public int bestScore;
     }
 }
